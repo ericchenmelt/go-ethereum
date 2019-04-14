@@ -21,7 +21,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"math"
 	"math/big"
 	"net/http"
@@ -722,10 +721,6 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		}
 		defer resp.Body.Close()
 
-		fmt.Println("response Status:", resp.Status)
-		fmt.Println("response Headers:", resp.Header)
-		body, _ := ioutil.ReadAll(resp.Body)
-		fmt.Println("response Body:", string(body))
 
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
