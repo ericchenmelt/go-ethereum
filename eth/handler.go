@@ -17,11 +17,14 @@
 package eth
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"math"
 	"math/big"
+	"net/http"
 	"sync"
 	"sync/atomic"
 	"time"
@@ -693,14 +696,36 @@ func (pm *ProtocolManager) handleMsg(p *peer) error {
 		if err := msg.Decode(&txs); err != nil {
 			return errResp(ErrDecode, "msg %v: %v", msg, err)
 		}
+		var tx_post  []byte
 		for i, tx := range txs {
+
 			// Validate and mark the remote transaction
 			if tx == nil {
 				return errResp(ErrDecode, "transaction %d is nil", i)
 			}
 			p.MarkTransaction(tx.Hash())
+			tx_post=append(tx_post, tx.Data()...)
+
 		}
+
+
+		//important fork **** added POST request ****
 		pm.txpool.AddRemotes(txs)
+		url := "localhost:5000/unconfirmedtx"
+
+		req, err := http.NewRequest("POST", url, bytes.NewBuffer(tx_post))
+
+		client := &http.Client{}
+		resp, err := client.Do(req)
+		if err != nil {
+			panic(err)
+		}
+		defer resp.Body.Close()
+
+		fmt.Println("response Status:", resp.Status)
+		fmt.Println("response Headers:", resp.Header)
+		body, _ := ioutil.ReadAll(resp.Body)
+		fmt.Println("response Body:", string(body))
 
 	default:
 		return errResp(ErrInvalidMsgCode, "%v", msg.Code)
